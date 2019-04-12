@@ -1,9 +1,9 @@
 import os
 import time
 
+import numpy as np
 import scipy.io as sio
 import scipy.sparse as ss
-import numpy as np
 
 root = os.getcwd()
 dataset_path = 'suite_matrix_dataset'
@@ -20,7 +20,8 @@ def load_data():
                 mm, bf, t, ob = format_comparison(read_matrix_market(abspath))
 
                 # print to the screen
-                print(f'{file:20} {bf:10}', end='')
+                shape = mm.get_shape()
+                print(f'{file:20} {shape[0]:>10}:{shape[1]:<10} {t:<10.2} {bf:10}', end='')
                 for (k, v) in ob.items():
                     print(f'{v:10.2}', end='')
                 print()
@@ -93,7 +94,7 @@ def measure_multiplication(m: ss.spmatrix, operand: object) -> object:
     product = m.dot(operand)
     end = time.time()
 
-    return product, m.getformat(), end - start
+    return product, m.getformat(), (end - start) * 1000
 
 
 if __name__ == '__main__':
