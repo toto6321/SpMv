@@ -14,7 +14,7 @@ dataset_path = 'suite_matrix_dataset'
 matrix_formats = ['coo', 'csr', 'csc', 'dia', 'bsr', 'dok', 'lil']
 DENSE = 'dense'
 
-output_file_name = 'matrices_and_their_best_format.csv'
+output_file_name = 'matrices_and_their_best_formats.csv'
 output_path = os.path.normpath(os.path.join(root, output_file_name))
 
 
