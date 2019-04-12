@@ -6,33 +6,64 @@ import numpy as np
 import scipy.io as sio
 import scipy.sparse as ss
 
+import csv
+
 root = os.getcwd()
 dataset_path = 'suite_matrix_dataset'
 
 matrix_formats = ['coo', 'csr', 'csc', 'dia', 'bsr', 'dok', 'lil']
 DENSE = 'dense'
 
+output_file_name = 'matrices_and_their_best_format.csv'
+output_path = os.path.normpath(os.path.join(root, output_file_name))
+
 
 def load_data():
-    print('{:30}'.format('FILE'), end='')
-    print('{:^21} {:^10} {:^10}'.format('SHAPE', 'BEST TIME', 'BEST FORMAT'), end='')
-    for f in matrix_formats:
-        print(f'{f.upper():>10}', end='')
+    with open(output_path, 'w', newline='') as csvfile:
+        fn = ['FILE', 'N_ROWS', 'N_COLUMNS', 'SHORTEST_ELAPSED_TIME',
+              'BEST_FORMAT'] + matrix_formats
+        writer = csv.DictWriter(csvfile, dialect=csv.unix_dialect,
+                                fieldnames=fn, delimiter=',')
 
-    print()
+        # table head
+        writer.writeheader()
 
-    for dirpath, dirnames, files in os.walk(dataset_path):
-        for file in files:
-            if file.endswith('.mtx'):
-                abspath = os.path.normpath(os.path.join(root, dirpath, file))
-                mm, p, bf, bt, ob = format_comparison(read_matrix_market(abspath))
+        # print to screen
+        print('{:30}'.format('FILE'), end='')
+        print('{:^21} {:^10} {:^10}'
+              .format('SHAPE', 'BEST TIME', 'BEST FORMAT'), end='')
+        for f in matrix_formats:
+            print(f'{f.upper():>10}', end='')
+        print()
 
-                # print to the screen
-                shape = mm.get_shape()
-                print(f'{file:30} {shape[0]:>10}:{shape[1]:<10} {bt:^10.4f} {bf:^10}', end='')
-                for (k, v) in ob.items():
-                    print(f'{v:10.4f}', end='')
-                print()
+        for dirpath, dirnames, files in os.walk(dataset_path):
+            for file in files:
+                if file.endswith('.mtx'):
+                    abspath = os.path.normpath(
+                        os.path.join(root, dirpath, file))
+                    mm, p, bf, bt, ob = format_comparison(
+                        read_matrix_market(abspath))
+
+                    shape = mm.get_shape()
+
+                    # write to csv file
+                    buffer = {
+                        'FILE': file,
+                        'N_ROWS': str(shape[0]),
+                        'N_COLUMNS': str(shape[1]),
+                        'SHORTEST_ELAPSED_TIME': f'{bt:.4f}',
+                        'BEST_FORMAT': bf,
+                    }
+                    buffer.update(ob)
+                    writer.writerow(buffer)
+
+                    # print to the screen
+                    shape = mm.get_shape()
+                    print(f'''{file:30} {shape[0]:>10}:{shape[
+                        1]:<10} {bt:^10.4f} {bf:10}''', end='')
+                    for (k, v) in ob.items():
+                        print(f'{v:10.4f}', end='')
+                    print()
 
 
 def read_matrix_market(file=None):
@@ -67,7 +98,8 @@ def format_comparison(m: ss.spmatrix):
     return m, p, k, v, observation
 
 
-def measure_multiplication(m: ss.spmatrix or np.ndarray, operand: object, f: str = 'coo') -> object:
+def measure_multiplication(m: ss.spmatrix or np.ndarray, operand: object,
+                           f: str = 'coo') -> object:
     mm = m
     actual_f = f
     if type(m) == ss.spmatrix:
