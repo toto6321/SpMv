@@ -9,22 +9,29 @@ import scipy.sparse as ss
 root = os.getcwd()
 dataset_path = 'suite_matrix_dataset'
 
+matrix_formats = ['coo', 'csr', 'csc', 'dia', 'bsr', 'dok', 'lil']
+DENSE = 'dense'
+
 
 def load_data():
-    blank = ''
-    print(f'{blank:20}')
+    print('{:30}'.format('FILE'), end='')
+    print('{:^21} {:^10} {:^10}'.format('SHAPE', 'BEST TIME', 'BEST FORMAT'), end='')
+    for f in matrix_formats:
+        print(f'{f.upper():>10}', end='')
+
+    print()
 
     for dirpath, dirnames, files in os.walk(dataset_path):
         for file in files:
             if file.endswith('.mtx'):
                 abspath = os.path.normpath(os.path.join(root, dirpath, file))
-                mm, bf, t, ob = format_comparison(read_matrix_market(abspath))
+                mm, p, bf, bt, ob = format_comparison(read_matrix_market(abspath))
 
                 # print to the screen
                 shape = mm.get_shape()
-                print(f'{file:20} {shape[0]:>10}:{shape[1]:<10} {t:<10.2} {bf:10}', end='')
+                print(f'{file:30} {shape[0]:>10}:{shape[1]:<10} {bt:^10.4f} {bf:^10}', end='')
                 for (k, v) in ob.items():
-                    print(f'{v:10.2}', end='')
+                    print(f'{v:10.4f}', end='')
                 print()
 
 
@@ -43,67 +50,40 @@ def format_comparison(m: ss.spmatrix):
     multiplier = np.ones((m.get_shape()[1], 1))
 
     observation = dict()
-
-    # ordinary dot product in COOrdinate format
-    p, f, t = measure_multiplication(m.copy().tocoo(), multiplier)
-    observation[str(f)] = t
-
-    # dot product in Compressed Sparse Row format
-    p, f, t = measure_multiplication(m.copy().tocsr(), multiplier)
-    observation[str(f)] = t
-
-    # dot product in Compressed Sparse Column format
-    p, f, t = measure_multiplication(m.copy().tocsc(), multiplier)
-    observation[str(f)] = t
-
-    # dot product in sparse DIAgonal format
-    try:
-        mf = m.copy().todia()
-        p, f, t = measure_multiplication(mf, multiplier)
-    except RuntimeError:
-        # print(RuntimeError)
-        f = 'dia'
-        t = float(math.inf)
-    observation[str(f)] = t
-
-    # dot product in Block Sparse Row format
-    p, f, t = measure_multiplication(m.copy().tobsr(), multiplier)
-    observation[str(f)] = t
-
-    # dot product in Dictionary Of Key format
-    p, f, t = measure_multiplication(m.copy().todok(), multiplier)
-    observation[str(f)] = t
-
-    # dot product in LInked List format
-    p, f, t = measure_multiplication(m.copy().tolil(), multiplier)
-    observation[str(f)] = t
-
-    # dot product in full dense matrix
-    # p, f, t = measure_multiplication(m.copy().todense(), multiplier)
-    # observation[str(f)] = t
+    for f in matrix_formats:
+        m, p, af, t = measure_multiplication(m, multiplier, f)
+        observation[af] = t
 
     # best format and the elapsed time
-    k = 'coo'
-    v = observation['coo']
+    k = matrix_formats[0]
+    v = observation[matrix_formats[0]]
 
     # one loop to find the best format
     for (key, value) in observation.items():
         if value < v:
             k = key
             v = value
-        # print the result
-        # print(f'{v:10.2}', end='')
-    print()
 
-    return m, k, v, observation
+    return m, p, k, v, observation
 
 
-def measure_multiplication(m: ss.spmatrix, operand: object) -> object:
+def measure_multiplication(m: ss.spmatrix or np.ndarray, operand: object, f: str = 'coo') -> object:
+    mm = m
+    actual_f = f
+    if type(m) == ss.spmatrix:
+        try:
+            mm = m.asformat(f.lower(), copy=True)
+        except RuntimeError:
+            return m, DENSE, math.inf
+    elif type(m) == np.ndarray:
+        actual_f = DENSE
+
     start = time.time()
-    product = m.dot(operand)
+    product = mm.dot(operand)
     end = time.time()
+    elapse_time = (end - start) * 1000  # in millisecond
 
-    return product, m.getformat(), (end - start) * 1000
+    return mm, product, actual_f, elapse_time
 
 
 if __name__ == '__main__':
