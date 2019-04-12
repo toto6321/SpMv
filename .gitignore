@@ -1,3 +1,9 @@
 
 # jupyter notebook checkpoint
 .ipynb_checkpoints/
+
+# IDEA configuration files
+.idea/
+
+# tarball files of sparse matrices
+*.tar.gz
