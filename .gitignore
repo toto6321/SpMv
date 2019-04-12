@@ -5,5 +5,5 @@
 # IDEA configuration files
 .idea/
 
-# tarball files of sparse matrices
-*.tar.gz
+# dataset
+suite_matrix_dataset/

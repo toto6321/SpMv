@@ -1,6 +1,7 @@
 import os
 import time
 
+import math
 import numpy as np
 import scipy.io as sio
 import scipy.sparse as ss
@@ -32,18 +33,20 @@ def read_matrix_market(file=None):
         file = '/media/toto/WORKSPACE/CSI5610/' \
                'SpMv/suite_matrix_dataset/mm/rgg010/rgg010.mtx'
     mm = sio.mmread(file)
+    if type(mm) is np.ndarray:
+        mm = ss.coo_matrix(mm)
     return mm
 
 
 def format_comparison(m: ss.spmatrix):
     # make the operand to be the unit vector in associate shape
-    multiplier = np.ones((m.get_shape()[0], 1))
+    multiplier = np.ones((m.get_shape()[1], 1))
 
     observation = dict()
 
     # ordinary dot product in COOrdinate format
     p, f, t = measure_multiplication(m.copy().tocoo(), multiplier)
-    observation[f] = t
+    observation[str(f)] = t
 
     # dot product in Compressed Sparse Row format
     p, f, t = measure_multiplication(m.copy().tocsr(), multiplier)
@@ -54,7 +57,13 @@ def format_comparison(m: ss.spmatrix):
     observation[str(f)] = t
 
     # dot product in sparse DIAgonal format
-    p, f, t = measure_multiplication(m.copy().todia(), multiplier)
+    try:
+        mf = m.copy().todia()
+        p, f, t = measure_multiplication(mf, multiplier)
+    except RuntimeError:
+        # print(RuntimeError)
+        f = 'dia'
+        t = float(math.inf)
     observation[str(f)] = t
 
     # dot product in Block Sparse Row format
