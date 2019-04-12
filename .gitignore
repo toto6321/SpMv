@@ -1,0 +1,12 @@
+
+# jupyter notebook checkpoint
+.ipynb_checkpoints/
+
+# IDEA configuration files
+.idea/
+
+# dataset
+suite_matrix_dataset/
+
+# sample output csv file
+matrices_and_their_best_formats.csv
