@@ -48,13 +48,16 @@ def load_data():
 
                     # write to csv file
                     buffer = {
-                        'FILE': file,
-                        'N_ROWS': str(shape[0]),
-                        'N_COLUMNS': str(shape[1]),
-                        'SHORTEST_ELAPSED_TIME': f'{bt:.4f}',
-                        'BEST_FORMAT': bf,
+                        'FILE': f'{file:<30}',
+                        'N_ROWS': f'{shape[0]:>10d}',
+                        'N_COLUMNS': f'{shape[1]:>10d}',
+                        'SHORTEST_ELAPSED_TIME': f'{bt:>10.4f}',
+                        'BEST_FORMAT': f'{bf:>10s}',
                     }
-                    buffer.update(ob)
+                    formatted_observation = ob.copy()
+                    for (k, v) in formatted_observation.items():
+                        formatted_observation[k] = f'{v:>10.4f}'
+                    buffer.update(formatted_observation)
                     writer.writerow(buffer)
 
                     # print to the screen
