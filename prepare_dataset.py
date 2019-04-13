@@ -53,6 +53,15 @@ if len(sys.argv) > 1:
                     if not os.path.exists(target_path):
                         os.makedirs(target_path)
 
+                    file_name = file[0:file.find('.tar.gz')]
+                    target_folder = os.path.join(target_path, file_name)
+
+                    # end this iteration if the file has been extracted
+                    if os.path.exists(target_folder):
+                        print(file, ' has been extracted! Skip!')
+                        continue
+
+                    # else extract the file
                     with tarfile.open(abspath) as tarobj:
                         tarobj.extractall(target_path)
                         print('successful to extract file ', file, ' to ',
