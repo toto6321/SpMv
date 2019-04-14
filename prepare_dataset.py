@@ -20,34 +20,26 @@ import tarfile
 '''
 
 '''
-2.  Copy this script to the MM folder and execute it after you determine \
-    the target path, which is the <project_path>/suite_sparse_dataset/.
-    
-    Alternatively, you can execute this script with the path of MM folder \
-    assigned.
+2.  Execute this script with source data path and destination path.
 '''
 
-root_path = os.getcwd()
-dataset_folder = 'dataset'
-dataset_abspath = os.path.normpath(os.path.join(root_path, dataset_folder))
 
-# if the MM folder's path is given
-if len(sys.argv) > 1:
-    data_path = sys.argv[1]
-    if os.path.isdir(data_path):
-        for dirpath, dirnames, files in os.walk(data_path):
+def get_dataset_ready(source_path=None, des_path=None):
+    if os.path.isdir(source_path):
+        for dirpath, dirnames, files in os.walk(source_path):
             for file in files:
-                abspath = os.path.normpath(os.path.join(dirpath, file))
+                abspath = os.path.join(dirpath, file)
 
+                pass
                 # if it is a tarball file
                 if file.endswith('.tar.gz'):
                     target_path = os.path.normpath(
                         os.path.join(
-                            dataset_abspath,
-                            os.path.relpath(dirpath, start=data_path)
+                            des_path,
+                            os.path.relpath(dirpath, start=source)
                         )
                     )
-                    print('target data path', target_path)
+                    print('target path:', target_path)
 
                     # create the folder tree
                     if not os.path.exists(target_path):
@@ -66,5 +58,23 @@ if len(sys.argv) > 1:
                         tarobj.extractall(target_path)
                         print('successful to extract file ', file, ' to ',
                               target_path)
-else:
-    print('no path of the MM folder is provided.')
+
+
+if __name__ == '__main__':
+    '''
+        :param source: parent directory containing matrices 
+        :param destination: parent directory to save extracted files 
+    '''
+
+    root_path = os.getcwd()
+    if len(sys.argv) > 2:
+        source = sys.argv[1]
+        destination = sys.argv[2]
+    elif len(sys.argv) > 1:
+        source = sys.argv[1]
+        destination = root_path + '/dataset'
+    else:
+        source = root_path + '/test/source'
+        destination = root_path + '/test/dataset'
+
+    get_dataset_ready(source, destination)

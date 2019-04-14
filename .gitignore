@@ -5,6 +5,9 @@
 # IDEA configuration files
 .idea/
 
+# source dataset
+source/
+
 # dataset
 dataset/
 
