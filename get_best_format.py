@@ -72,7 +72,7 @@ def load_data():
 def read_matrix_market(file=None):
     if not file:
         file = '/media/toto/WORKSPACE/CSI5610/' \
-               'SpMv/suite_matrix_dataset/mm/rgg010/rgg010.mtx'
+               'SpMv/suite_matrix_dataset/MM/rgg010/rgg010.mtx'
     mm = sio.mmread(file)
     if type(mm) is np.ndarray:
         mm = ss.coo_matrix(mm)
