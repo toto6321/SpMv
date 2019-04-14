@@ -6,7 +6,10 @@
 .idea/
 
 # dataset
-suite_matrix_dataset/
+dataset/
 
-# sample output csv file
-matrices_and_their_best_formats.csv
+# test
+test/
+
+# result
+result/

@@ -14,8 +14,8 @@ import tarfile
     They are files, MM, mat and boeing. Image files of the view of the \
     matrices are saved in the files folder, while the tarball files of the \
     matrices are saved in either MM, mat or boeing depending on which \
-    formats you choose. If you programme on the Matlab, then you will choose \
-    matlab and go to the mat folder, while in our case we use the matrix \
+    formats you choose. If you programme on the MATLAB, then you will choose \
+    MATLAB and go to the mat folder, while in our case we use the matrix \
     market extension so that we go to the MM folder.
 '''
 
@@ -28,7 +28,7 @@ import tarfile
 '''
 
 root_path = os.getcwd()
-dataset_folder = 'suite_matrix_dataset/MM'
+dataset_folder = 'dataset'
 dataset_abspath = os.path.normpath(os.path.join(root_path, dataset_folder))
 
 # if the MM folder's path is given

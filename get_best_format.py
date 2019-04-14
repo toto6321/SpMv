@@ -1,5 +1,7 @@
+import sys
 import os
 import time
+import datetime
 
 import math
 import numpy as np
@@ -8,17 +10,24 @@ import scipy.sparse as ss
 
 import csv
 
-root = os.getcwd()
-dataset_path = 'suite_matrix_dataset'
-
 matrix_formats = ['coo', 'csr', 'csc', 'dia', 'bsr', 'dok', 'lil']
 DENSE = 'dense'
 
-output_file_name = 'matrices_and_their_best_formats.csv'
-output_path = os.path.normpath(os.path.join(root, output_file_name))
 
+def load_data(test=False):
+    root_path = os.getcwd()
 
-def load_data():
+    if test:
+        root_path += '/test'
+
+    dataset_folder = 'dataset'
+    dataset_abspath = os.path.join(root_path, dataset_folder)
+    result_path = os.path.join(root_path, 'result')
+
+    date_string = datetime.datetime.now().isoformat()
+    output_file_name = 'best_formats_' + date_string + '.csv'
+    output_path = os.path.normpath(os.path.join(result_path, output_file_name))
+
     with open(output_path, 'w', newline='') as csvfile:
         fn = ['FILE', 'N_ROWS', 'N_COLUMNS', 'SHORTEST_ELAPSED_TIME',
               'BEST_FORMAT'] + matrix_formats
@@ -36,11 +45,11 @@ def load_data():
             print(f'{f.upper():>10}', end='')
         print()
 
-        for dirpath, dirnames, files in os.walk(dataset_path):
+        for dirpath, dirnames, files in os.walk(dataset_abspath):
             for file in files:
                 if file.endswith('.mtx'):
                     abspath = os.path.normpath(
-                        os.path.join(root, dirpath, file))
+                        os.path.join(root_path, dirpath, file))
                     mm, p, bf, bt, ob = format_comparison(
                         read_matrix_market(abspath))
 
@@ -71,8 +80,8 @@ def load_data():
 
 def read_matrix_market(file=None):
     if not file:
-        file = '/media/toto/WORKSPACE/CSI5610/' \
-               'SpMv/suite_matrix_dataset/MM/rgg010/rgg010.mtx'
+        pass
+
     mm = sio.mmread(file)
     if type(mm) is np.ndarray:
         mm = ss.coo_matrix(mm)
@@ -122,4 +131,4 @@ def measure_multiplication(m: ss.spmatrix or np.ndarray, operand: object,
 
 
 if __name__ == '__main__':
-    load_data()
+    load_data(len(sys.argv) > 1)
