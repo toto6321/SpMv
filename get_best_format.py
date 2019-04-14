@@ -14,19 +14,20 @@ matrix_formats = ['coo', 'csr', 'csc', 'dia', 'bsr', 'dok', 'lil']
 DENSE = 'dense'
 
 
-def load_data(test=False):
-    root_path = os.getcwd()
+def load_data(dataset=None, result=None):
+    if not dataset:
+        root_path = os.getcwd()
+        dataset_folder = 'test/dataset'
+        dataset = os.path.join(root_path, dataset_folder)
 
-    if test:
-        root_path += '/test'
-
-    dataset_folder = 'dataset'
-    dataset_abspath = os.path.join(root_path, dataset_folder)
-    result_path = os.path.join(root_path, 'result')
+    if not result:
+        root_path = os.getcwd()
+        result_folder = 'test/result'
+        result = os.path.join(root_path, result_folder)
 
     date_string = datetime.datetime.now().isoformat()
     output_file_name = 'best_formats_' + date_string + '.csv'
-    output_path = os.path.normpath(os.path.join(result_path, output_file_name))
+    output_path = os.path.join(result, output_file_name)
 
     with open(output_path, 'w', newline='') as csvfile:
         fn = ['FILE', 'N_ROWS', 'N_COLUMNS', 'SHORTEST_ELAPSED_TIME',
@@ -45,11 +46,10 @@ def load_data(test=False):
             print(f'{f.upper():>10}', end='')
         print()
 
-        for dirpath, dirnames, files in os.walk(dataset_abspath):
+        for dirpath, dirnames, files in os.walk(dataset):
             for file in files:
                 if file.endswith('.mtx'):
-                    abspath = os.path.normpath(
-                        os.path.join(root_path, dirpath, file))
+                    abspath = os.path.join(dirpath, file)
                     mm, p, bf, bt, ob = format_comparison(
                         read_matrix_market(abspath))
 
@@ -131,4 +131,28 @@ def measure_multiplication(m: ss.spmatrix or np.ndarray, operand: object,
 
 
 if __name__ == '__main__':
-    load_data(len(sys.argv) > 1)
+    root = os.getcwd()
+    if len(sys.argv) > 2:
+        dataset = sys.argv[1]
+        result = sys.argv[2]
+        if not os.path.isdir(dataset):
+            raise RuntimeError(dataset + 'is not found')
+        if not os.path.isdir(result):
+            raise RuntimeError(result + 'is not found')
+    elif len(sys.argv) > 1:
+        dataset = sys.argv[1]
+        if not os.path.isdir(dataset):
+            raise RuntimeError(dataset + 'is not found')
+        result = os.path.join(root, 'result')
+        if not os.path.exists(result):
+            os.makedirs(result)
+    else:
+        dataset = os.path.join(root, 'test', 'dataset')
+        result = os.path.join(root, 'test', 'result')
+
+        if not os.path.exists(dataset):
+            os.makedirs(dataset)
+        if not os.path.exists(result):
+            os.makedirs(result)
+
+    load_data(dataset, result)
