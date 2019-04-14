@@ -5,8 +5,14 @@
 # IDEA configuration files
 .idea/
 
-# dataset
-suite_matrix_dataset/
+# source dataset
+source/
 
-# sample output csv file
-matrices_and_their_best_formats.csv
+# dataset
+dataset/
+
+# test
+test/
+
+# result
+result/
