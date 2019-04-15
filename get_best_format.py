@@ -26,7 +26,7 @@ def load_data(dataset=None, result=None):
         result = os.path.join(root_path, result_folder)
 
     date_string = datetime.datetime.now().isoformat()
-    output_file_name = 'best_formats_' + date_string + '.csv'
+    output_file_name = 'feature_tables_' + date_string + '.csv'
     output_path = os.path.join(result, output_file_name)
 
     with open(output_path, 'w', newline='') as csvfile:
@@ -40,14 +40,21 @@ def load_data(dataset=None, result=None):
         writer.writeheader()
 
         # print to screen
-        print(f'{fn[0]:30}', end='')
         string = (
-            f'{fn[1]:>10s} {fn[2]:>10s} {fn[3]:>10s} {fn[4]:>10s}'
-            f'{fn[5]:>10s} {fn[6]:>10s} {fn[7]:>10s} {fn[8]:>10s} {fn[9]:>10s}'
+            f'{fn[0]:<30s}'
+            f'{fn[1]:>10s}'
+            f'{fn[2]:>10s}'
+            f'{fn[3]:>10s}'
+            f'{fn[4]:>10s}'
+            f'{fn[5]:>10s}'
+            f'{fn[6]:>10s}'
+            f'{fn[7]:>10s}'
+            f'{fn[8]:>10s}'
+            f'{fn[9]:>10s}'
         )
         print(string, end='')
         for f in matrix_formats:
-            print(f'{f.upper():>10}', end='')
+            print(f'{f.upper():>10s}', end='')
         print()
 
         for dirpath, dirnames, files in os.walk(dataset):
@@ -67,7 +74,7 @@ def load_data(dataset=None, result=None):
                     buffer = {
                         fn[0]: f'{file:<30}',
                         fn[1]: f'{n_rows:>10d}',
-                        fn[2]: f'{n_cols:<10d}',
+                        fn[2]: f'{n_cols:>10d}',
                         fn[3]: f'{nnz_total:>10.0f}',
                         fn[4]: f'{density:>10.2f}',
                         fn[5]: f'{nnz_max:>10.0f}',
@@ -84,10 +91,16 @@ def load_data(dataset=None, result=None):
 
                     # print to the screen
                     string = (
-                        f'{file:<30s} {n_rows:>10d} {n_cols:<10d}'
-                        f'{nnz_total:>10.0f} {density:>10.2f}'
-                        f'{nnz_max:>10.0f} {nnz_mean:>10.2f}'
-                        f'{nnz_std:>10.2f} {bt:>10.4f} {bf:>10s}'
+                        f'{file:<30s}'
+                        f'{n_rows:>10d}'
+                        f'{n_cols:>10d}'
+                        f'{nnz_total:>10.0f}'
+                        f'{density:>10.2f}'
+                        f'{nnz_max:>10.0f}'
+                        f'{nnz_mean:>10.2f}'
+                        f'{nnz_std:>10.2f}'
+                        f'{bt:>10.4f}'
+                        f'{bf:>10s}'
                     )
                     print(string, end='')
 
