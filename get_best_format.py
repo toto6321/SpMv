@@ -90,6 +90,7 @@ def read_matrix_market(file=None):
 
 def format_comparison(m: ss.spmatrix):
     # make the operand to be the unit vector in associate shape
+    # multiplier = np.fromfunction(lambda i, j: i, (m.get_shape()[1], 1))
     multiplier = np.ones((m.get_shape()[1], 1))
 
     observation = dict()
