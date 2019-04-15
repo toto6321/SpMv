@@ -50,8 +50,12 @@ def load_data(dataset=None, result=None):
             for file in files:
                 if file.endswith('.mtx'):
                     abspath = os.path.join(dirpath, file)
-                    mm, p, bf, bt, ob = format_comparison(
-                        read_matrix_market(abspath))
+                    mm = read_matrix_market(abspath)
+
+                    # regular feature extraction
+                    n_rows, n_cols, nnz_total, density, nnz_max, nnz_mean, \
+                    nnz_std = regular_feature_extraction(mm)
+                    _, p, bf, bt, ob = format_comparison(mm)
 
                     shape = mm.get_shape()
 
@@ -70,7 +74,6 @@ def load_data(dataset=None, result=None):
                     writer.writerow(buffer)
 
                     # print to the screen
-                    shape = mm.get_shape()
                     print(f'''{file:30} {shape[0]:>10}:{shape[
                         1]:<10} {bt:^10.4f} {bf:10}''', end='')
                     for (k, v) in ob.items():
@@ -108,7 +111,7 @@ def format_comparison(m: ss.spmatrix):
             k = key
             v = value
 
-    return m, p, k, v, observation
+    return multiplier, p, k, v, observation
 
 
 def measure_multiplication(m: ss.spmatrix or np.ndarray, operand: object,
@@ -129,6 +132,39 @@ def measure_multiplication(m: ss.spmatrix or np.ndarray, operand: object,
     elapse_time = (end - start) * 1000  # in millisecond
 
     return mm, product, actual_f, elapse_time
+
+
+def regular_feature_extraction(m: ss.spmatrix or np.ndarray = None):
+    if m is None:
+        return
+
+    if isinstance(m, ss.spmatrix):
+        n_rows, n_cols = m.get_shape()
+        nnz_list = np.zeros(n_rows)
+
+        # generate nnz list by scanning non-zero element indexes list
+        row_indexes = m.row
+        for i in range(0, len(row_indexes)):
+            nnz_list[row_indexes[i]] += 1
+    else:
+        # then it should be a np.ndarray
+        n_rows, n_cols = m.shape
+        nnz_list = np.zeros(n_rows)
+
+        # generate nnz list by scanning non-zero element row by row
+        for r in range(0, n_rows):
+            for c in range(0, n_cols):
+                if m[r, c] != 0:
+                    nnz_list[r] += 1
+
+    nnz_mean = nnz_list.mean(0)
+    nnz_total = nnz_list.sum(0)
+    # to be simple, make it an integer
+    density = nnz_total * 100 // (n_rows * n_cols)
+    nnz_max = nnz_list.max(0)
+    nnz_std = nnz_list.std(0)
+
+    return n_rows, n_cols, nnz_total, density, nnz_max, nnz_mean, nnz_std
 
 
 if __name__ == '__main__':
