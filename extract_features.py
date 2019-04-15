@@ -26,12 +26,13 @@ def load_data(dataset=None, result=None):
         result = os.path.join(root_path, result_folder)
 
     date_string = datetime.datetime.now().isoformat()
-    output_file_name = 'best_formats_' + date_string + '.csv'
+    output_file_name = 'feature_tables_' + date_string + '.csv'
     output_path = os.path.join(result, output_file_name)
 
     with open(output_path, 'w', newline='') as csvfile:
-        fn = ['FILE', 'N_ROWS', 'N_COLUMNS', 'SHORTEST_ELAPSED_TIME',
-              'BEST_FORMAT'] + matrix_formats
+        fn = ['FILE', 'N_ROWS', 'N_COLS', 'NNZ_TOTAL', 'DENSITY',
+              'NNZ_MAX', 'NNZ_MEAN', 'NNZ_STD', 'BEST_TIME', 'BEST_FORMAT'] \
+             + matrix_formats
         writer = csv.DictWriter(csvfile, dialect=csv.unix_dialect,
                                 fieldnames=fn, delimiter=',')
 
@@ -39,29 +40,48 @@ def load_data(dataset=None, result=None):
         writer.writeheader()
 
         # print to screen
-        print('{:30}'.format('FILE'), end='')
-        print('{:^21} {:^10} {:^10}'
-              .format('SHAPE', 'BEST TIME', 'BEST FORMAT'), end='')
+        string = (
+            f'{fn[0]:<30s}'
+            f'{fn[1]:>10s}'
+            f'{fn[2]:>10s}'
+            f'{fn[3]:>10s}'
+            f'{fn[4]:>10s}'
+            f'{fn[5]:>10s}'
+            f'{fn[6]:>10s}'
+            f'{fn[7]:>10s}'
+            f'{fn[8]:>10s}'
+            f'{fn[9]:>10s}'
+        )
+        print(string, end='')
         for f in matrix_formats:
-            print(f'{f.upper():>10}', end='')
+            print(f'{f.upper():>10s}', end='')
         print()
 
         for dirpath, dirnames, files in os.walk(dataset):
             for file in files:
                 if file.endswith('.mtx'):
                     abspath = os.path.join(dirpath, file)
-                    mm, p, bf, bt, ob = format_comparison(
-                        read_matrix_market(abspath))
+                    mm = read_matrix_market(abspath)
+
+                    # regular feature extraction
+                    n_rows, n_cols, nnz_total, density, nnz_max, nnz_mean, \
+                    nnz_std = regular_feature_extraction(mm)
+                    _, p, bf, bt, ob = format_comparison(mm)
 
                     shape = mm.get_shape()
 
                     # write to csv file
                     buffer = {
-                        'FILE': f'{file:<30}',
-                        'N_ROWS': f'{shape[0]:>10d}',
-                        'N_COLUMNS': f'{shape[1]:>10d}',
-                        'SHORTEST_ELAPSED_TIME': f'{bt:>10.4f}',
-                        'BEST_FORMAT': f'{bf:>10s}',
+                        fn[0]: f'{file:<30}',
+                        fn[1]: f'{n_rows:>10d}',
+                        fn[2]: f'{n_cols:>10d}',
+                        fn[3]: f'{nnz_total:>10.0f}',
+                        fn[4]: f'{density:>10.2f}',
+                        fn[5]: f'{nnz_max:>10.0f}',
+                        fn[6]: f'{nnz_mean:>10.2f}',
+                        fn[7]: f'{nnz_std:>10.2f}',
+                        fn[8]: f'{bt:>10.4f}',
+                        fn[9]: f'{bf:>10s}',
                     }
                     formatted_observation = ob.copy()
                     for (k, v) in formatted_observation.items():
@@ -70,11 +90,22 @@ def load_data(dataset=None, result=None):
                     writer.writerow(buffer)
 
                     # print to the screen
-                    shape = mm.get_shape()
-                    print(f'''{file:30} {shape[0]:>10}:{shape[
-                        1]:<10} {bt:^10.4f} {bf:10}''', end='')
+                    string = (
+                        f'{file:<30s}'
+                        f'{n_rows:>10d}'
+                        f'{n_cols:>10d}'
+                        f'{nnz_total:>10.0f}'
+                        f'{density:>10.2f}'
+                        f'{nnz_max:>10.0f}'
+                        f'{nnz_mean:>10.2f}'
+                        f'{nnz_std:>10.2f}'
+                        f'{bt:>10.4f}'
+                        f'{bf:>10s}'
+                    )
+                    print(string, end='')
+
                     for (k, v) in ob.items():
-                        print(f'{v:10.4f}', end='')
+                        print(f'{v:>10.4f}', end='')
                     print()
 
 
@@ -90,6 +121,7 @@ def read_matrix_market(file=None):
 
 def format_comparison(m: ss.spmatrix):
     # make the operand to be the unit vector in associate shape
+    # multiplier = np.fromfunction(lambda i, j: i, (m.get_shape()[1], 1))
     multiplier = np.ones((m.get_shape()[1], 1))
 
     observation = dict()
@@ -107,7 +139,7 @@ def format_comparison(m: ss.spmatrix):
             k = key
             v = value
 
-    return m, p, k, v, observation
+    return multiplier, p, k, v, observation
 
 
 def measure_multiplication(m: ss.spmatrix or np.ndarray, operand: object,
@@ -128,6 +160,38 @@ def measure_multiplication(m: ss.spmatrix or np.ndarray, operand: object,
     elapse_time = (end - start) * 1000  # in millisecond
 
     return mm, product, actual_f, elapse_time
+
+
+def regular_feature_extraction(m: ss.spmatrix or np.ndarray = None):
+    if m is None:
+        return
+
+    if isinstance(m, ss.spmatrix):
+        n_rows, n_cols = m.get_shape()
+        nnz_list = np.zeros(n_rows)
+
+        # generate nnz list by scanning non-zero element indexes list
+        row_indexes = m.row
+        for i in range(0, len(row_indexes)):
+            nnz_list[row_indexes[i]] += 1
+    else:
+        # then it should be a np.ndarray
+        n_rows, n_cols = m.shape
+        nnz_list = np.zeros(n_rows)
+
+        # generate nnz list by scanning non-zero element row by row
+        for r in range(0, n_rows):
+            for c in range(0, n_cols):
+                if m[r, c] != 0:
+                    nnz_list[r] += 1
+
+    nnz_mean = nnz_list.mean(0)
+    nnz_total = nnz_list.sum(0)
+    density = nnz_total * 100 / (n_rows * n_cols)
+    nnz_max = nnz_list.max(0)
+    nnz_std = nnz_list.std(0)
+
+    return n_rows, n_cols, nnz_total, density, nnz_max, nnz_mean, nnz_std
 
 
 if __name__ == '__main__':
