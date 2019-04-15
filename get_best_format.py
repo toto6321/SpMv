@@ -30,8 +30,9 @@ def load_data(dataset=None, result=None):
     output_path = os.path.join(result, output_file_name)
 
     with open(output_path, 'w', newline='') as csvfile:
-        fn = ['FILE', 'N_ROWS', 'N_COLUMNS', 'SHORTEST_ELAPSED_TIME',
-              'BEST_FORMAT'] + matrix_formats
+        fn = ['FILE', 'N_ROWS', 'N_COLS', 'NNZ_TOTAL', 'DENSITY',
+              'NNZ_MAX', 'NNZ_MEAN', 'NNZ_STD', 'BEST_TIME', 'BEST_FORMAT'] \
+             + matrix_formats
         writer = csv.DictWriter(csvfile, dialect=csv.unix_dialect,
                                 fieldnames=fn, delimiter=',')
 
@@ -39,9 +40,12 @@ def load_data(dataset=None, result=None):
         writer.writeheader()
 
         # print to screen
-        print('{:30}'.format('FILE'), end='')
-        print('{:^21} {:^10} {:^10}'
-              .format('SHAPE', 'BEST TIME', 'BEST FORMAT'), end='')
+        print(f'{fn[0]:30}', end='')
+        string = (
+            f'{fn[1]:>10s} {fn[2]:>10s} {fn[3]:>10s} {fn[4]:>10s}'
+            f'{fn[5]:>10s} {fn[6]:>10s} {fn[7]:>10s} {fn[8]:>10s} {fn[9]:>10s}'
+        )
+        print(string, end='')
         for f in matrix_formats:
             print(f'{f.upper():>10}', end='')
         print()
@@ -61,11 +65,16 @@ def load_data(dataset=None, result=None):
 
                     # write to csv file
                     buffer = {
-                        'FILE': f'{file:<30}',
-                        'N_ROWS': f'{shape[0]:>10d}',
-                        'N_COLUMNS': f'{shape[1]:>10d}',
-                        'SHORTEST_ELAPSED_TIME': f'{bt:>10.4f}',
-                        'BEST_FORMAT': f'{bf:>10s}',
+                        fn[0]: f'{file:<30}',
+                        fn[1]: f'{n_rows:>10d}',
+                        fn[2]: f'{n_cols:<10d}',
+                        fn[3]: f'{nnz_total:>10.0f}',
+                        fn[4]: f'{density:>10.2f}',
+                        fn[5]: f'{nnz_max:>10.0f}',
+                        fn[6]: f'{nnz_mean:>10.2f}',
+                        fn[7]: f'{nnz_std:>10.2f}',
+                        fn[8]: f'{bt:>10.4f}',
+                        fn[9]: f'{bf:>10s}',
                     }
                     formatted_observation = ob.copy()
                     for (k, v) in formatted_observation.items():
@@ -74,10 +83,16 @@ def load_data(dataset=None, result=None):
                     writer.writerow(buffer)
 
                     # print to the screen
-                    print(f'''{file:30} {shape[0]:>10}:{shape[
-                        1]:<10} {bt:^10.4f} {bf:10}''', end='')
+                    string = (
+                        f'{file:<30s} {n_rows:>10d} {n_cols:<10d}'
+                        f'{nnz_total:>10.0f} {density:>10.2f}'
+                        f'{nnz_max:>10.0f} {nnz_mean:>10.2f}'
+                        f'{nnz_std:>10.2f} {bt:>10.4f} {bf:>10s}'
+                    )
+                    print(string, end='')
+
                     for (k, v) in ob.items():
-                        print(f'{v:10.4f}', end='')
+                        print(f'{v:>10.4f}', end='')
                     print()
 
 
@@ -159,8 +174,7 @@ def regular_feature_extraction(m: ss.spmatrix or np.ndarray = None):
 
     nnz_mean = nnz_list.mean(0)
     nnz_total = nnz_list.sum(0)
-    # to be simple, make it an integer
-    density = nnz_total * 100 // (n_rows * n_cols)
+    density = nnz_total * 100 / (n_rows * n_cols)
     nnz_max = nnz_list.max(0)
     nnz_std = nnz_list.std(0)
 
