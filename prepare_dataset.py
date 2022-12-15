@@ -55,7 +55,26 @@ def get_dataset_ready(source_path=None, des_path=None):
 
                     # else extract the file
                     with tarfile.open(abspath) as tarobj:
-                        tarobj.extractall(target_path)
+                        def is_within_directory(directory, target):
+                            
+                            abs_directory = os.path.abspath(directory)
+                            abs_target = os.path.abspath(target)
+                        
+                            prefix = os.path.commonprefix([abs_directory, abs_target])
+                            
+                            return prefix == abs_directory
+                        
+                        def safe_extract(tar, path=".", members=None, *, numeric_owner=False):
+                        
+                            for member in tar.getmembers():
+                                member_path = os.path.join(path, member.name)
+                                if not is_within_directory(path, member_path):
+                                    raise Exception("Attempted Path Traversal in Tar File")
+                        
+                            tar.extractall(path, members, numeric_owner=numeric_owner) 
+                            
+                        
+                        safe_extract(tarobj, target_path)
                         print('successful to extract file ', file, ' to ',
                               target_path)
 
